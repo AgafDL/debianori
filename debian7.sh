@@ -2,12 +2,12 @@
 
 # initialisasi var
 export DEBIAN_FRONTEND=noninteractive
-OS=`uname -m`;
-MYIP=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0'`;
+OS=$(uname -m);
+MYIP=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0');
 MYIP2="s/xxxxxxxxx/$MYIP/g";
 
 # go to root
-cd
+cd || exit
 
 # disable ipv6
 echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6
@@ -63,7 +63,7 @@ vnstat -u -i venet0
 service vnstat restart
 
 # install screenfetch
-cd
+cd || exit
 wget http://git.silverirc.com/cgit.cgi/screenfetch.git/plain/screenfetch-dev
 mv screenfetch-dev /usr/bin/screenfetch
 chmod +x /usr/bin/screenfetch
@@ -71,7 +71,7 @@ echo "clear" >> .profile
 echo "screenfetch" >> .profile
 
 # install webserver
-cd
+cd || exit
 rm /etc/nginx/sites-enabled/default
 rm /etc/nginx/sites-available/default
 wget -O /etc/nginx/nginx.conf "https://raw.github.com/yurisshOS/debianori/master/nginx.conf"
@@ -85,7 +85,7 @@ service nginx restart
 
 # install openvpn
 wget -O /etc/openvpn/openvpn.tar "https://raw.github.com/yurisshOS/debianori/master/openvpn-debian.tar"
-cd /etc/openvpn/
+cd /etc/openvpn/ || exit
 tar xf openvpn.tar
 wget -O /etc/openvpn/1194.conf "https://raw.github.com/yurisshOS/debianori/master/1194.conf"
 service openvpn restart
@@ -93,22 +93,22 @@ sysctl -w net.ipv4.ip_forward=1
 sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
 wget -O /etc/iptables.up.rules "https://raw.github.com/yurisshOS/debianori/master/iptables.up.rules"
 sed -i '$ i\iptables-restore < /etc/iptables.up.rules' /etc/rc.local
-sed -i $MYIP2 /etc/iptables.up.rules;
+sed -i "$MYIP2" /etc/iptables.up.rules;
 iptables-restore < /etc/iptables.up.rules
 service openvpn restart
 
 # configure openvpn client config
-cd /etc/openvpn/
+cd /etc/openvpn/ || exit
 wget -O /etc/openvpn/1194-client.ovpn "https://raw.github.com/yurisshOS/debianori/master/1194-client.conf"
-sed -i $MYIP2 /etc/openvpn/1194-client.ovpn;
-PASS=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 15 | head -n 1`;
+sed -i "$MYIP2" /etc/openvpn/1194-client.ovpn;
+PASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 15 | head -n 1);
 useradd -M -s /bin/false YurisshOS
 echo "YurisshOS:$PASS" | chpasswd
 echo "username" > pass.txt
 echo "password" >> pass.txt
 tar cf client.tar 1194-client.ovpn pass.txt
 cp client.tar /home/vps/public_html/
-cd
+cd || exit
 
 # install badvpn
 wget -O /usr/bin/badvpn-udpgw "https://raw.github.com/yurisshOS/debianori/master/badvpn-udpgw"
@@ -123,7 +123,7 @@ screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7300
 wget -O /etc/snmp/snmpd.conf "https://raw.github.com/yurisshOS/debianori/master/snmpd.conf"
 wget -O /root/mrtg-mem.sh "https://raw.github.com/yurisshOS/debianori/master/mrtg-mem.sh"
 chmod +x /root/mrtg-mem.sh
-cd /etc/snmp/
+cd /etc/snmp/ || exit
 sed -i 's/TRAPDRUN=no/TRAPDRUN=yes/g' /etc/default/snmpd
 service snmpd restart
 snmpwalk -v 1 -c public localhost 1.3.6.1.4.1.2021.10.1.3.1
@@ -136,7 +136,7 @@ indexmaker --output=/home/vps/public_html/mrtg/index.html /etc/mrtg.cfg
 if [ -x /usr/bin/mrtg ] && [ -r /etc/mrtg.cfg ]; then mkdir -p /var/log/mrtg ; env LANG=C /usr/bin/mrtg /etc/mrtg.cfg 2>&1 | tee -a /var/log/mrtg/mrtg.log ; fi
 if [ -x /usr/bin/mrtg ] && [ -r /etc/mrtg.cfg ]; then mkdir -p /var/log/mrtg ; env LANG=C /usr/bin/mrtg /etc/mrtg.cfg 2>&1 | tee -a /var/log/mrtg/mrtg.log ; fi
 if [ -x /usr/bin/mrtg ] && [ -r /etc/mrtg.cfg ]; then mkdir -p /var/log/mrtg ; env LANG=C /usr/bin/mrtg /etc/mrtg.cfg 2>&1 | tee -a /var/log/mrtg/mrtg.log ; fi
-cd
+cd || exit
 
 # setting port ssh
 sed -i '/Port 22/a Port 143' /etc/ssh/sshd_config
@@ -155,18 +155,18 @@ service ssh restart
 service dropbear restart
 
 # install vnstat gui
-cd /home/vps/public_html/
+cd /home/vps/public_html/ || exit
 wget http://www.sqweek.com/sqweek/files/vnstat_php_frontend-1.5.1.tar.gz
 tar xf vnstat_php_frontend-1.5.1.tar.gz
 rm vnstat_php_frontend-1.5.1.tar.gz
 mv vnstat_php_frontend-1.5.1 vnstat
-cd vnstat
+cd vnstat || exit
 sed -i 's/eth0/venet0/g' config.php
 sed -i "s/\$iface_list = array('venet0', 'sixxs');/\$iface_list = array('venet0');/g" config.php
 sed -i "s/\$language = 'nl';/\$language = 'en';/g" config.php
 sed -i 's/Internal/Internet/g' config.php
 sed -i '/SixXS IPv6/d' config.php
-cd
+cd || exit
 
 # install fail2ban
 apt-get -y install fail2ban;service fail2ban restart
@@ -174,11 +174,11 @@ apt-get -y install fail2ban;service fail2ban restart
 # install squid3
 apt-get -y install squid3
 wget -O /etc/squid3/squid.conf "https://raw.github.com/yurisshOS/debianori/master/squid3.conf"
-sed -i $MYIP2 /etc/squid3/squid.conf;
+sed -i "$MYIP2" /etc/squid3/squid.conf;
 service squid3 restart
 
 # install webmin
-cd
+cd || exit
 wget "http://prdownloads.sourceforge.net/webadmin/webmin_1.680_all.deb"
 dpkg --install webmin_1.680_all.deb;
 apt-get -y -f install;
@@ -187,7 +187,7 @@ service webmin restart
 service vnstat restart
 
 # downlaod script
-cd
+cd || exit
 wget -O speedtest_cli.py "https://raw.github.com/sivel/speedtest-cli/master/speedtest_cli.py"
 wget -O bench-network.sh "https://raw.github.com/yurisshOS/debianori/master/bench-network.sh"
 wget -O ps_mem.py "https://raw.github.com/pixelb/ps_mem/master/ps_mem.py"
